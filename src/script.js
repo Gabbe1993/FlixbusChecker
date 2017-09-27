@@ -8,20 +8,21 @@ var nodemailer = require('nodemailer');
 
 // url is result from search page
 var url = 'https://shop.flixbus.com/search?route=Berlin-Delft&rideDate=01.10.2017&adults=1&children=0&bikes=0&_locale=en&departureCity=88&departureStation=&arrivalCity=3378&arrivalStation=&currency=EUR';
-var notifyIfLess = 60;
+var initPrice = 49; // emails if different than this
+var price = -1;
 
 var transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'xxx', //  your email
-        pass: 'xxx'   // your pass
+        user: 'xxx', //  sender email
+        pass: 'xxx'   // sender pass
     }
 });
 
 var mailOptions = {
-    from: 'FlixbusChecker',
-    to: 'xxx',  // retriever of the email
-    subject: 'Price drop for Flixbus! Now: ',
+    from: 'flixbuschecker@gmail.com',
+    to: 'xxx',  // retriever email
+    subject: 'Price changed for Flixbus! Now: ',
     text: 'Best regards from FlixbusChecker :)'
 };
 
@@ -44,31 +45,28 @@ function requestWrap(){
 
         var toMatch = "class=\"num\"";
         var index = body.indexOf(toMatch);
-        var price = parseInt(body.substr(index + toMatch.length + 1, 5));
+        price = parseInt(body.substr(index + toMatch.length + 1, 5));
 
         console.log("Price: " + price);
 
-        if(price < notifyIfLess) {
-            mailOptions.subject += price + ' €';
-            notifyIfLess = price;
-            console.log('Less than set to = ' + notifyIfLess);
+        if(price !== initPrice) {
+            mailOptions.subject += price + ' € from ' + initPrice + " €" ;
+            initPrice = price;
+            console.log('initPrice changed to ' + initPrice);
 
             sendMailWrap();
         }
     });
 }
-setInterval(requestWrap, 60000); // checks price every given ms
 
-/*http.createServer(function (req, response) {
+http.createServer(function (req, response) {
     response.writeHead(200, {'Content-Type': 'text/plain'});
-    console.log('Create server');
-
-
-    response.write('Running FlixbusChecker');
+    response.write("Price: " + price + " eur\n" + "updated: " + new Date().toUTCString());
     response.end('');
 
-    console.log('Server running at http://127.0.0.1:8889/');
-
  }).listen(8889);
-*/
 
+
+setInterval(requestWrap, 600000); // checks price every given ms
+
+console.log('Server running at http://127.0.0.1:8889/');
